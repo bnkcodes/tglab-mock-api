@@ -173,7 +173,7 @@ app.delete("/my-bet/:id", (req, res) => {
   if (bet.status === "canceled")
     return res.status(400).json({ message: "Aposta já cancelada" });
 
-  if (bet.status === "win")
+  if (bet.status === "win" && player.balance < bet.amount)
     return res.status(400).json({ message: "Aposta já finalizada" });
 
   player.balance += bet.amount;
