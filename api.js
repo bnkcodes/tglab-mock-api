@@ -2,10 +2,12 @@ const express = require("express");
 const { faker } = require("@faker-js/faker");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
+const cors = require('cors');
 
 const app = express();
 const port = 3000;
 
+app.use(cors());
 app.use(express.json());
 
 const players = [];
