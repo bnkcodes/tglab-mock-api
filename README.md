@@ -14,7 +14,7 @@ Esta é uma API RESTful desenvolvida com Express.js que simula a gestão de uma 
 1. Clone este repositório:
 
    ```bash
-   git clone https://github.com/camargo-leonardo/mock-api.git
+   git clone https://github.com/bnkcodes/tglab-mock-api.git
    cd mock-api
 
    ```
