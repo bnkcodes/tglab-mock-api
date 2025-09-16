@@ -15,14 +15,14 @@ Esta é uma API RESTful desenvolvida com Express.js que simula a gestão de uma 
 
    ```bash
    git clone https://github.com/bnkcodes/tglab-mock-api.git
-   cd mock-api
+   cd tglab-mock-api
 
    ```
 
 2. Acesse o diretório do projeto:
 
    ```bash
-   cd /path/mock-api
+   cd /path/tglab-mock-api
 
    ```
 
