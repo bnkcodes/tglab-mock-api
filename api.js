@@ -3,6 +3,8 @@ const { faker } = require("@faker-js/faker");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const cors = require('cors');
+const { createServer  } = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
 const port = 3000;
@@ -10,7 +12,26 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
+const server = createServer(app);
+
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
 const players = [];
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth && socket.handshake.auth.token;
+  const player = players.find((p) => p.accessToken === token);
+
+  if (!player) return next(new Error("Não autorizado"));
+
+  socket.join(`player:${player.id}`);
+  next();
+});
 
 app.post("/register", (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
@@ -64,6 +85,45 @@ app.post("/login", (req, res) => {
   });
 });
 
+app.post("/deposit", (req, res) => {
+  const { amount } = req.body;
+  const authorization = req.headers.authorization;
+
+  if (!authorization)
+    return res.status(401).json({ message: "Token inválido" });
+
+  const player = players.find(
+    (player) => player.accessToken === authorization.replace("Bearer ", "")
+  );
+
+  if (!player) return res.status(401).json({ message: "Token inválido" });
+
+  if (amount < 1)
+    return res.status(400).json({ message: "Valor mínimo para depósito é 1" });
+
+  const depositTransactionId = faker.string.uuid();
+
+  player.balance = player.balance + amount;
+
+  player.transactions.push({
+    id: depositTransactionId,
+    amount,
+    type: "deposit",
+    createdAt: new Date(),
+  });
+
+  io.to(`player:${player.id}`).emit("wallet:balance", {
+    balance: player.balance,
+  });
+
+  res.json({
+    transactionId: depositTransactionId,
+    currency: player.currency,
+    balance: player.balance,
+    amountDeposited: amount,
+  });
+});
+
 app.post("/bet", (req, res) => {
   const { amount } = req.body;
   const authorization = req.headers.authorization;
@@ -111,6 +171,10 @@ app.post("/bet", (req, res) => {
     status: isWin ? "win" : "lost",
     createdAt: new Date(),
     winAmount: isWin ? amount * 2 : null,
+  });
+
+  io.to(`player:${player.id}`).emit("wallet:balance", {
+    balance: player.balance,
   });
 
   res.json({
@@ -188,6 +252,10 @@ app.delete("/my-bet/:id", (req, res) => {
     createdAt: new Date(),
   });
 
+  io.to(`player:${player.id}`).emit("wallet:balance", {
+    balance: player.balance,
+  });
+
   res.json({
     transactionId: id,
     balance: player.balance,
@@ -248,7 +316,7 @@ app.use(
   )
 );
 
-app.listen(port, () =>
+server.listen(port, () =>
   console.log(`Listening: http://localhost:${port}! ✨👋🌎`)
 );
 
